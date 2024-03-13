@@ -124,7 +124,7 @@ public class HealthGUI {
     /**
      * The "Edit Patient" button for editing a patient's details.
      */
-    private Button editButton;
+    private Button editPatientButton;
 
     /**
      * The "Reset" button for clearing all the text fields and date pickers.
@@ -161,6 +161,11 @@ public class HealthGUI {
         addPatientDetailsTab();
         addFluTab();
         addCovid19Tab();
+
+        // Disable these buttons on launch
+        removePatientButton.setDisable(true);
+        editPatientButton.setDisable(true);
+        resetButton.setDisable(true);
 
         vBox.getChildren().add(tabPane);
         vBox.getChildren().add(gridPane);
@@ -204,7 +209,7 @@ public class HealthGUI {
         removePatientButton();
         buttonBox2.getChildren().add(removePatientButton);
         addEditPatientButton();
-        buttonBox2.getChildren().add(editButton);
+        buttonBox2.getChildren().add(editPatientButton);
         patientDetailsPane.add(buttonBox2, 0, 7, 2, 1);
 
         HBox buttonBox3 = new HBox(5);
@@ -369,6 +374,23 @@ public class HealthGUI {
         tabPane.getTabs().add(inoculationTab);
     }
 
+    private Patient getPatientFromFields() {
+        String firstName = firstNameField.getText();
+        String lastName = lastNameField.getText();
+        String address = addressField.getText();
+        String city = cityField.getText();
+        String state = stateField.getValue();
+        String zip = zipField.getText();
+        String phone = phoneField.getText();
+        String email = emailField.getText();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String date1 = covidInoculationDate1.getValue() != null ? covidInoculationDate1.getValue().format(formatter) : "0000-00-00";
+        String date2 = covidInoculationDate2.getValue() != null ? covidInoculationDate2.getValue().format(formatter) : "0000-00-00";
+
+        return new Patient(firstName, lastName, address, city, state, zip, phone, email, date1, date2);
+    }
+
     /**
      * Creates and sets the action for the "Add Patient" button.
      * The action triggers the addPatientFunction method.
@@ -384,21 +406,11 @@ public class HealthGUI {
      * The patient is then added to the patient list using the PatientBST class's method.
      */
     public void addPatientFunction() {
-        // TODO: Create a Method for this repeat code
-        String firstName = firstNameField.getText();
-        String lastName = lastNameField.getText();
-        String address = addressField.getText();
-        String city = cityField.getText();
-        String state = stateField.getValue();
-        String zip = zipField.getText();
-        String phone = phoneField.getText();
-        String email = emailField.getText();
+        // Use a method to get the patient from the fields
+        Patient newPatient = getPatientFromFields();
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        String date1 = covidInoculationDate1.getValue() != null ? covidInoculationDate1.getValue().format(formatter) : "0000-00-00";
-        String date2 = covidInoculationDate2.getValue() != null ? covidInoculationDate2.getValue().format(formatter) : "0000-00-00";
-
-        patientBST.addPatient(firstName, lastName, address, city, state, zip, phone, email, date1, date2);
+        // Add the patient to the BST
+        patientBST.addPatient(newPatient);
     }
 
     /**
@@ -419,7 +431,6 @@ public class HealthGUI {
         String email = emailField.getText();
 
         Patient patient = patientBST.searchPatient(email);
-        // TODO: Create a method for this alert
         if (patient == null) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error");
@@ -435,6 +446,8 @@ public class HealthGUI {
         // If the user confirms the removal, delete the patient
         if (alert.getResult() == ButtonType.OK) {
             patientBST.deletePatient(email);
+            resetFields();
+            removePatientConfirmation();
         }
     }
 
@@ -451,6 +464,17 @@ public class HealthGUI {
         alert.setContentText("Click OK to confirm");
         alert.showAndWait();
         return alert;
+    }
+
+    /**
+     * Shows a confirmation alert indicating that the patient has been successfully removed.
+     */
+    public void removePatientConfirmation() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Remove Patient");
+        alert.setHeaderText(null);
+        alert.setContentText("Patient has been removed successfully");
+        alert.showAndWait();
     }
 
     /**
@@ -496,6 +520,10 @@ public class HealthGUI {
             emailField.setEditable(true);
             covidInoculationDate1.setDisable(false);
             covidInoculationDate2.setDisable(false);
+            
+            removePatientButton.setDisable(false);
+            editPatientButton.setDisable(false);
+            resetButton.setDisable(false);
 
             // Set the date pickers to the patient's inoculation dates
             // Because the date pickers are setup as 0000-00-00 if no date is provided, we need to check for that
@@ -527,6 +555,9 @@ public class HealthGUI {
             emailField.setEditable(true);
             covidInoculationDate1.setDisable(true);
             covidInoculationDate2.setDisable(true);
+
+            removePatientButton.setDisable(true);
+            editPatientButton.setDisable(true);
         }
     }
 
@@ -550,18 +581,7 @@ public class HealthGUI {
      * If the user confirms the edit operation, the patient's details are updated in the patient list using the PatientBST class's method.
      */
     private void editPatientFunction() {
-        // TODO: Create a method for this repeat code
-        String firstName = firstNameField.getText();
-        String lastName = lastNameField.getText();
-        String address = addressField.getText();
-        String city = cityField.getText();
-        String state = stateField.getValue();
-        String zip = zipField.getText();
-        String phone = phoneField.getText();
-        String email = emailField.getText();
-
         // Check if the second inoculation date is before the first
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate date1Local = covidInoculationDate1.getValue();
         LocalDate date2Local = covidInoculationDate2.getValue();
 
@@ -574,16 +594,14 @@ public class HealthGUI {
             return;
         }
 
-        // Convert the date pickers to strings
-        String date1 = date1Local != null ? date1Local.format(formatter) : "0000-00-00";
-        String date2 = date2Local != null ? date2Local.format(formatter) : "0000-00-00";
+        // Get the patient from the fields
+        Patient updatedPatient = getPatientFromFields();
 
         // Create and show a confirmation alert for editing the patient's details
         Alert alert = editPatientAlert();
 
         // If the user confirms the edit operation, update the patient's details
         if (alert.getResult() == ButtonType.OK) {
-            Patient updatedPatient = new Patient(firstName, lastName, address, city, state, zip, phone, email, date1, date2);
             patientBST.updatePatient(updatedPatient);
 
             // Show a confirmation alert indicating that the patient's details have been successfully updated
@@ -625,13 +643,22 @@ public class HealthGUI {
     private void addHelpButton() {
         helpButton = new Button("Help");
         helpButton.setOnAction(e -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Help");
-            alert.setHeaderText(null);
-            // TODO: Create a string builder for this
-            alert.setContentText("To search a Patient - Enter their email and click Search Patient.\n" + "To edit a Patient - Search the Patient, update the fields, and click Edit Patient.\n" + "To reset the fields - Click the Reset button\n" + "To quit the application - Click the Quit button\n" + "To perform a bulk search - Click the Bulk Search button\n");
-            alert.showAndWait();
+            helpButtonFunction();
         });
+    }
+
+    private void helpButtonFunction() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Help");
+        alert.setHeaderText(null);
+
+        String helpContent = "To search a Patient - Enter their email and click Search Patient.\n" +
+                "To Edit a Patient - Search the Patient, update the fields, and click Edit Patient.\n" +
+                "To Reset the Fields - Click the Reset button\n" +
+                "To quit the application - Click the Quit button\n";
+
+        alert.setContentText(helpContent);
+        alert.showAndWait();
     }
 
     /**
@@ -639,8 +666,8 @@ public class HealthGUI {
      * When this button is clicked, it triggers the editPatientFunction method to edit a patient's details.
      */
     public void addEditPatientButton() {
-        editButton = new Button("Edit Patient");
-        editButton.setOnAction(e -> {
+        editPatientButton = new Button("Edit Patient");
+        editPatientButton.setOnAction(e -> {
             editPatientFunction();
         });
     }
@@ -652,29 +679,37 @@ public class HealthGUI {
     public void addResetButton() {
         resetButton = new Button("Reset");
         resetButton.setOnAction(e -> {
-
-            // Clear the name fields
-            firstNameField.clear();
-            lastNameField.clear();
-
-            // Clear the address fields
-            addressField.clear();
-            cityField.clear();
-            stateField.setValue(null);
-            zipField.clear();
-
-            // Clear the phone and email fields
-            phoneField.clear();
-            emailField.clear();
-
-            // Clear the flu date pickers
-            fluInoculationDate1.setValue(null);
-            fluInoculationDate2.setValue(null);
-
-            // Clear the covid-19 date pickers
-            covidInoculationDate1.setValue(null);
-            covidInoculationDate2.setValue(null);
+            resetFields();
         });
+    }
+
+    private void resetFields() {
+        // Clear the name fields
+        firstNameField.clear();
+        lastNameField.clear();
+
+        // Clear the address fields
+        addressField.clear();
+        cityField.clear();
+        stateField.setValue(null);
+        zipField.clear();
+
+        // Clear the phone and email fields
+        phoneField.clear();
+        emailField.clear();
+
+        // Clear the flu date pickers
+        fluInoculationDate1.setValue(null);
+        fluInoculationDate2.setValue(null);
+
+        // Clear the covid-19 date pickers
+        covidInoculationDate1.setValue(null);
+        covidInoculationDate2.setValue(null);
+
+        // Disable the buttons after reset
+        removePatientButton.setDisable(true);
+        editPatientButton.setDisable(true);
+        resetButton.setDisable(true);
     }
 
     /**

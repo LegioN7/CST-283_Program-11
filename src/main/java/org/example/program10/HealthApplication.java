@@ -85,7 +85,7 @@ public class HealthApplication extends Application {
         // Create the login GUI
         // This will be the entry point for the application
         // The user will need to log in before accessing the main application
-        // The username and password is admin
+        // The username and password are admin
         LoginGUI loginGUI = new LoginGUI();
     }
 
